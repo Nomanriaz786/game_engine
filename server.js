@@ -19,8 +19,8 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://192.168.199.171:3000',
-        description: 'Local Network Server',
+        url: process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000',
+        description: 'API Server',
       }
     ],
     basePath: '/api',
@@ -52,11 +52,14 @@ app.use((err, req, res, next) => {
     res.status(500).json({ message: 'Something went wrong!', error: err.message });
 });
 
-const PORT = process.env.PORT || 3000;
-const HOST = '0.0.0.0'; // Listen on all network interfaces
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+    const PORT = process.env.PORT || 3000;
+    const HOST = '0.0.0.0';
+    app.listen(PORT, HOST, () => {
+        console.log(`Server is running`);
+    });
+}
 
-app.listen(PORT, HOST, () => {
-    console.log(`Server is running on:`);
-    console.log(`- Local URL: http://localhost:${PORT}`);
-    console.log(`- Network URL: http://192.168.1.100:${PORT}`);
-}); 
+// For Vercel
+module.exports = app; 

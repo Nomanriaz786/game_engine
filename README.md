@@ -12,7 +12,7 @@ npm install
 2. Update the `.env` file with the content according to your mongodb server, port remains same:
 ```
 PORT=3000
-MONGODB_URI=mongodb://localhost:27017/game_engine
+MONGODB_URI=your_mongodb_connection_string
 ```
 
 3. Start the server:
