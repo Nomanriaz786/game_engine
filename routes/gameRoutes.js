@@ -275,4 +275,48 @@ router.get('/getDrawing/:game_code/:player_name/:part_name', async (req, res) =>
     }
 });
 
+/**
+ * @swagger
+ * /api/completedDrawings/{game_code}:
+ *   get:
+ *     summary: Get all completed drawings for a game
+ *     tags: [Game]
+ *     parameters:
+ *       - in: path
+ *         name: game_code
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Game code
+ *     responses:
+ *       200:
+ *         description: List of completed drawings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/DrawingStatus'
+ *       404:
+ *         description: No completed drawings found
+ */
+router.get('/completedDrawings/:game_code', async (req, res) => {
+    try {
+        const { game_code } = req.params;
+        
+        // Find all completed drawings for the game
+        const completedDrawings = await Drawing.find({
+            is_completed: true
+        });
+
+        if (!completedDrawings || completedDrawings.length === 0) {
+            return res.status(404).json({ message: 'No completed drawings found' });
+        }
+
+        res.json(completedDrawings);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 module.exports = router; 

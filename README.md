@@ -162,6 +162,56 @@ Future<Map<String, dynamic>> getDrawing(
 }
 ```
 
+### 5. Get Completed Drawings
+```http
+GET /api/completedDrawings/:game_code
+```
+
+**Response Body:**
+```json
+[
+    {
+        "created_at": "",
+        "drawed_parts_of_player": "Hat",
+        "drawing_points": [
+            {
+                "offsetDx": 157,
+                "offsetDy": 120,
+                "pointType": 0,
+                "pressure": 1
+            }
+        ],
+        "is_completed": true,
+        "player_drawing": "",
+        "player_id": 1,
+        "player_image": "",
+        "player_name": "",
+        "player_part": "Hat"
+    }
+]
+```
+
+**Flutter Example:**
+```dart
+Future<List<Map<String, dynamic>>> getCompletedDrawings(String gameCode) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/completedDrawings/$gameCode'),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Failed to fetch completed drawings');
+    }
+  } catch (e) {
+    print('Error: $e');
+    rethrow;
+  }
+}
+```
+
 ## Complete Flutter Service Example
 
 Here's a complete service class you can use in your Flutter app:
