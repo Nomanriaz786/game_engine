@@ -212,138 +212,253 @@ Future<List<Map<String, dynamic>>> getCompletedDrawings(String gameCode) async {
 }
 ```
 
-## Complete Flutter Service Example
+### 6. Update Game with Player
+```http
+PUT /api/updateGameWithPlayer
+```
 
-Here's a complete service class you can use in your Flutter app:
+**Request Body:**
+```json
+{
+    "game_code": "1000",
+    "player_data": {
+        "player_name": "test",
+        "player_number": 82,
+        "player_image": "",
+        "player_body_parts_with_player_names": [
+            "Hat-",
+            "Head-"
+        ],
+        "player_current_step": [
+            0,
+            1
+        ]
+    }
+}
+```
 
+**Response Body:**
+```json
+{
+    "message": "Game updated successfully",
+    "game": {
+        "created_at": "",
+        "drawing_time": 0,
+        "game_code": "1000",
+        "games_Parts": [
+            "Hat",
+            "Head"
+        ],
+        "join": true,
+        "number_of_players": 1,
+        "start_game": true,
+        "players": [
+            {
+                "game_code": "1000",
+                "player_body_images": [],
+                "player_body_parts_with_player_names": [
+                    "Hat-",
+                    "Head-"
+                ],
+                "player_current_step": [
+                    0,
+                    1
+                ],
+                "player_image": "",
+                "player_name": "test",
+                "player_number": 82
+            }
+        ]
+    }
+}
+```
+
+**Flutter Example:**
 ```dart
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+Future<Map<String, dynamic>> updateGameWithPlayer(String gameCode, Map<String, dynamic> playerData) async {
+  try {
+    final response = await http.put(
+      Uri.parse('$baseUrl/updateGameWithPlayer'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'game_code': gameCode,
+        'player_data': playerData
+      }),
+    );
 
-class GameService {
-  final String baseUrl = 'http://your-api-url/api';
-
-  // Store game state
-  Future<void> storeGameState(Map<String, dynamic> gameData) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/storeGameState'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(gameData),
-      );
-
-      if (response.statusCode == 201) {
-        print('Game state stored successfully');
-      } else {
-        throw Exception('Failed to store game state');
-      }
-    } catch (e) {
-      print('Error: $e');
-      rethrow;
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to update game with player');
     }
-  }
-
-  // Update drawing status
-  Future<void> updateDrawingStatus(Map<String, dynamic> drawingData) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/updateDrawingStatus'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(drawingData),
-      );
-
-      if (response.statusCode == 201) {
-        print('Drawing status updated successfully');
-      } else {
-        throw Exception('Failed to update drawing status');
-      }
-    } catch (e) {
-      print('Error: $e');
-      rethrow;
-    }
-  }
-
-  // Get incomplete users
-  Future<List<String>> getIncompleteUsers(String gameCode, String partName) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/incompleteUsers/$gameCode/$partName'),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return List<String>.from(data['incompletePlayers']);
-      } else {
-        throw Exception('Failed to fetch incomplete users');
-      }
-    } catch (e) {
-      print('Error: $e');
-      rethrow;
-    }
-  }
-
-  // Get drawing data
-  Future<Map<String, dynamic>> getDrawing(
-    String gameCode,
-    String playerName,
-    String partName,
-  ) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/getDrawing/$gameCode/$playerName/$partName'),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception('Failed to fetch drawing data');
-      }
-    } catch (e) {
-      print('Error: $e');
-      rethrow;
-    }
+  } catch (e) {
+    print('Error: $e');
+    rethrow;
   }
 }
 ```
 
-## Usage in Flutter
-
-1. Add the http package to your `pubspec.yaml`:
-```yaml
-dependencies:
-  http: ^1.1.0
+### 7. Update Game Status (Admin)
+```http
+PUT /api/updateGameStatus
 ```
 
-2. Create an instance of the service:
-```dart
-final gameService = GameService();
+**Request Body:**
+```json
+{
+    "game_code": "1000",
+    "start_game": true,
+    "join": false,
+    "drawing_time": 60
+}
 ```
 
-3. Use the service in your widgets:
-```dart
-// Store game state
-await gameService.storeGameState(gameData);
-
-// Update drawing
-await gameService.updateDrawingStatus(drawingData);
-
-// Get incomplete users
-final incompleteUsers = await gameService.getIncompleteUsers('1000', 'Hat');
-
-// Get drawing data
-final drawingData = await gameService.getDrawing('1000', 'player1', 'Hat');
+**Response Body:**
+```json
+{
+    "message": "Game status updated successfully",
+    "game": {
+        "created_at": "",
+        "drawing_time": 60,
+        "game_code": "1000",
+        "games_Parts": [
+            "Hat",
+            "Head"
+        ],
+        "join": false,
+        "number_of_players": 1,
+        "start_game": true,
+        "players": [
+            {
+                "game_code": "1000",
+                "player_body_images": [],
+                "player_body_parts_with_player_names": [
+                    "Hat-",
+                    "Head-"
+                ],
+                "player_current_step": [
+                    0,
+                    1
+                ],
+                "player_image": "",
+                "player_name": "test",
+                "player_number": 82
+            }
+        ]
+    }
+}
 ```
 
-## Error Handling
-
-All API endpoints include proper error handling. Make sure to handle errors appropriately in your Flutter app:
-
+**Flutter Example:**
 ```dart
+Future<Map<String, dynamic>> updateGameStatus({
+  required String gameCode,
+  bool? startGame,
+  bool? join,
+  int? drawingTime,
+}) async {
+  try {
+    final response = await http.put(
+      Uri.parse('$baseUrl/updateGameStatus'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'game_code': gameCode,
+        if (startGame != null) 'start_game': startGame,
+        if (join != null) 'join': join,
+        if (drawingTime != null) 'drawing_time': drawingTime,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to update game status');
+    }
+  } catch (e) {
+    print('Error: $e');
+    rethrow;
+  }
+}
+```
+
+### 8. Validate Join Game
+```http
+POST /api/validateJoinGame
+```
+
+**Request Body:**
+```json
+{
+    "game_code": "1000"
+}
+```
+
+**Response Body (Success - Can Join):**
+```json
+{
+    "message": "User can join the game",
+    "canJoin": true,
+    "game": {
+        "game_code": "1000",
+        "number_of_players": 1,
+        "games_Parts": [
+            "Hat",
+            "Head"
+        ]
+    }
+}
+```
+
+**Response Body (Error - Game Started):**
+```json
+{
+    "message": "Room already started",
+    "canJoin": false
+}
+```
+
+**Response Body (Error - Room Closed):**
+```json
+{
+    "message": "Room is not accepting new players",
+    "canJoin": false
+}
+```
+
+**Flutter Example:**
+```dart
+Future<Map<String, dynamic>> validateJoinGame(String gameCode) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/validateJoinGame'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'game_code': gameCode
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['message']);
+    }
+  } catch (e) {
+    print('Error: $e');
+    rethrow;
+  }
+}
+
+// Usage example:
 try {
-  await gameService.storeGameState(gameData);
+  final result = await validateJoinGame('1000');
+  if (result['canJoin']) {
+    // Proceed with joining the game
+    print('Can join game: ${result['game']}');
+  }
 } catch (e) {
-  // Show error message to user
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('Error: $e')),
-  );
-} 
+  // Handle error (game started or room closed)
+  print('Cannot join: $e');
+}
+```
+

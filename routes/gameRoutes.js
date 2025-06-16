@@ -319,4 +319,207 @@ router.get('/completedDrawings/:game_code', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/updateGameWithPlayer:
+ *   put:
+ *     summary: Update game with new player data
+ *     tags: [Game]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - game_code
+ *               - player_data
+ *             properties:
+ *               game_code:
+ *                 type: string
+ *               player_data:
+ *                 type: object
+ *                 properties:
+ *                   player_name:
+ *                     type: string
+ *                   player_number:
+ *                     type: number
+ *                   player_image:
+ *                     type: string
+ *                   player_body_parts_with_player_names:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   player_current_step:
+ *                     type: array
+ *                     items:
+ *                       type: number
+ *     responses:
+ *       200:
+ *         description: Game updated successfully
+ *       404:
+ *         description: Game not found
+ */
+router.put('/updateGameWithPlayer', async (req, res) => {
+    try {
+        const { game_code, player_data } = req.body;
+
+        // Find the game by game_code
+        const game = await Game.findOne({ game_code });
+        if (!game) {
+            return res.status(404).json({ message: 'Game not found' });
+        }
+
+        // Add game_code to player data
+        const updatedPlayerData = {
+            ...player_data,
+            game_code: game_code,
+            player_body_images: player_data.player_body_images || []
+        };
+
+        // Add new player to players array
+        game.players.push(updatedPlayerData);
+
+        // Update number_of_players based on players array length
+        game.number_of_players = game.players.length;
+
+        // Save the updated game
+        await game.save();
+
+        res.status(200).json({
+            message: 'Game updated successfully',
+            game: game
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+/**
+ * @swagger
+ * /api/updateGameStatus:
+ *   put:
+ *     summary: Update game status fields (admin only)
+ *     tags: [Game]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - game_code
+ *             properties:
+ *               game_code:
+ *                 type: string
+ *               start_game:
+ *                 type: boolean
+ *               join:
+ *                 type: boolean
+ *               drawing_time:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Game status updated successfully
+ *       404:
+ *         description: Game not found
+ */
+router.put('/updateGameStatus', async (req, res) => {
+    try {
+        const { game_code, start_game, join, drawing_time } = req.body;
+
+        // Find the game by game_code
+        const game = await Game.findOne({ game_code });
+        if (!game) {
+            return res.status(404).json({ message: 'Game not found' });
+        }
+
+        // Update only the fields that are provided
+        if (start_game !== undefined) {
+            game.start_game = start_game;
+        }
+        if (join !== undefined) {
+            game.join = join;
+        }
+        if (drawing_time !== undefined) {
+            game.drawing_time = drawing_time;
+        }
+
+        // Save the updated game
+        await game.save();
+
+        res.status(200).json({
+            message: 'Game status updated successfully',
+            game: game
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+/**
+ * @swagger
+ * /api/validateJoinGame:
+ *   post:
+ *     summary: Validate if user can join the game
+ *     tags: [Game]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - game_code
+ *             properties:
+ *               game_code:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User can join the game
+ *       400:
+ *         description: Game has already started
+ *       404:
+ *         description: Game not found
+ */
+router.post('/validateJoinGame', async (req, res) => {
+    try {
+        const { game_code } = req.body;
+
+        // Find the game by game_code
+        const game = await Game.findOne({ game_code });
+        if (!game) {
+            return res.status(404).json({ message: 'Game not found' });
+        }
+
+        // Check if game has already started
+        if (game.start_game) {
+            return res.status(400).json({ 
+                message: 'Room already started',
+                canJoin: false
+            });
+        }
+
+        // Check if game is open for joining
+        if (!game.join) {
+            return res.status(400).json({ 
+                message: 'Room is not accepting new players',
+                canJoin: false
+            });
+        }
+
+        res.status(200).json({
+            message: 'User can join the game',
+            canJoin: true,
+            game: {
+                game_code: game.game_code,
+                number_of_players: game.number_of_players,
+                games_Parts: game.games_Parts
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 module.exports = router; 
