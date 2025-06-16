@@ -381,7 +381,7 @@ Future<Map<String, dynamic>> updateGameStatus({
 }
 ```
 
-### 8. Validate Join Game
+### 8. Validate and Join Game
 ```http
 POST /api/validateJoinGame
 ```
@@ -389,14 +389,27 @@ POST /api/validateJoinGame
 **Request Body:**
 ```json
 {
-    "game_code": "1000"
+    "game_code": "1000",
+    "player_data": {
+        "player_name": "test",
+        "player_number": 82,
+        "player_image": "",
+        "player_body_parts_with_player_names": [
+            "Hat-",
+            "Head-"
+        ],
+        "player_current_step": [
+            0,
+            1
+        ]
+    }
 }
 ```
 
-**Response Body (Success - Can Join):**
+**Response Body (Success - Joined Game):**
 ```json
 {
-    "message": "User can join the game",
+    "message": "User joined the game successfully",
     "canJoin": true,
     "game": {
         "game_code": "1000",
@@ -404,6 +417,23 @@ POST /api/validateJoinGame
         "games_Parts": [
             "Hat",
             "Head"
+        ],
+        "players": [
+            {
+                "game_code": "1000",
+                "player_name": "test",
+                "player_number": 82,
+                "player_image": "",
+                "player_body_parts_with_player_names": [
+                    "Hat-",
+                    "Head-"
+                ],
+                "player_current_step": [
+                    0,
+                    1
+                ],
+                "player_body_images": []
+            }
         ]
     }
 }
@@ -427,13 +457,17 @@ POST /api/validateJoinGame
 
 **Flutter Example:**
 ```dart
-Future<Map<String, dynamic>> validateJoinGame(String gameCode) async {
+Future<Map<String, dynamic>> validateAndJoinGame({
+  required String gameCode,
+  required Map<String, dynamic> playerData,
+}) async {
   try {
     final response = await http.post(
       Uri.parse('$baseUrl/validateJoinGame'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'game_code': gameCode
+        'game_code': gameCode,
+        'player_data': playerData
       }),
     );
 
@@ -451,10 +485,19 @@ Future<Map<String, dynamic>> validateJoinGame(String gameCode) async {
 
 // Usage example:
 try {
-  final result = await validateJoinGame('1000');
+  final result = await validateAndJoinGame(
+    gameCode: '1000',
+    playerData: {
+      'player_name': 'test',
+      'player_number': 82,
+      'player_image': '',
+      'player_body_parts_with_player_names': ['Hat-', 'Head-'],
+      'player_current_step': [0, 1]
+    }
+  );
   if (result['canJoin']) {
-    // Proceed with joining the game
-    print('Can join game: ${result['game']}');
+    // Player has been added to the game
+    print('Joined game: ${result['game']}');
   }
 } catch (e) {
   // Handle error (game started or room closed)

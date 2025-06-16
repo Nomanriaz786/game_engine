@@ -461,7 +461,7 @@ router.put('/updateGameStatus', async (req, res) => {
  * @swagger
  * /api/validateJoinGame:
  *   post:
- *     summary: Validate if user can join the game
+ *     summary: Validate if user can join the game and add them if possible
  *     tags: [Game]
  *     requestBody:
  *       required: true
@@ -471,20 +471,38 @@ router.put('/updateGameStatus', async (req, res) => {
  *             type: object
  *             required:
  *               - game_code
+ *               - player_data
  *             properties:
  *               game_code:
  *                 type: string
+ *               player_data:
+ *                 type: object
+ *                 properties:
+ *                   player_name:
+ *                     type: string
+ *                   player_number:
+ *                     type: number
+ *                   player_image:
+ *                     type: string
+ *                   player_body_parts_with_player_names:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   player_current_step:
+ *                     type: array
+ *                     items:
+ *                       type: number
  *     responses:
  *       200:
- *         description: User can join the game
+ *         description: User joined the game successfully
  *       400:
- *         description: Game has already started
+ *         description: Game has already started or room is closed
  *       404:
  *         description: Game not found
  */
 router.post('/validateJoinGame', async (req, res) => {
     try {
-        const { game_code } = req.body;
+        const { game_code, player_data } = req.body;
 
         // Find the game by game_code
         const game = await Game.findOne({ game_code });
@@ -508,13 +526,30 @@ router.post('/validateJoinGame', async (req, res) => {
             });
         }
 
+        // Add game_code to player data
+        const updatedPlayerData = {
+            ...player_data,
+            game_code: game_code,
+            player_body_images: player_data.player_body_images || []
+        };
+
+        // Add new player to players array
+        game.players.push(updatedPlayerData);
+
+        // Update number_of_players based on players array length
+        game.number_of_players = game.players.length;
+
+        // Save the updated game
+        await game.save();
+
         res.status(200).json({
-            message: 'User can join the game',
+            message: 'User joined the game successfully',
             canJoin: true,
             game: {
                 game_code: game.game_code,
                 number_of_players: game.number_of_players,
-                games_Parts: game.games_Parts
+                games_Parts: game.games_Parts,
+                players: game.players
             }
         });
     } catch (error) {
