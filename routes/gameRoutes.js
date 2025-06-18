@@ -557,4 +557,46 @@ router.post('/validateJoinGame', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/getGameData/{game_code}:
+ *   get:
+ *     summary: Get game data by game code
+ *     tags: [Game]
+ *     parameters:
+ *       - in: path
+ *         name: game_code
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Game code
+ *     responses:
+ *       200:
+ *         description: Game data retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/GameState'
+ *       404:
+ *         description: Game not found
+ */
+router.get('/getGameData/:game_code', async (req, res) => {
+    try {
+        const { game_code } = req.params;
+
+        // Find the game by game_code
+        const game = await Game.findOne({ game_code });
+        if (!game) {
+            return res.status(404).json({ message: 'Game not found' });
+        }
+
+        res.status(200).json({
+            message: 'Game data retrieved successfully',
+            game: game
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 module.exports = router; 

@@ -505,3 +505,73 @@ try {
 }
 ```
 
+### 9. Get Game Data
+```http
+GET /api/getGameData/:game_code
+```
+
+**Response Body:**
+```json
+{
+    "message": "Game data retrieved successfully",
+    "game": {
+        "created_at": "",
+        "drawing_time": 0,
+        "game_code": "1000",
+        "games_Parts": [
+            "Hat",
+            "Head"
+        ],
+        "join": true,
+        "number_of_players": 1,
+        "start_game": true,
+        "players": [
+            {
+                "game_code": "1000",
+                "player_body_images": [],
+                "player_body_parts_with_player_names": [
+                    "Hat-",
+                    "Head-"
+                ],
+                "player_current_step": [
+                    0,
+                    1
+                ],
+                "player_image": "",
+                "player_name": "test",
+                "player_number": 82
+            }
+        ]
+    }
+}
+```
+
+**Flutter Example:**
+```dart
+Future<Map<String, dynamic>> getGameData(String gameCode) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$baseUrl/getGameData/$gameCode'),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to get game data');
+    }
+  } catch (e) {
+    print('Error: $e');
+    rethrow;
+  }
+}
+
+// Usage example:
+try {
+  final result = await getGameData('1000');
+  final gameData = result['game'];
+  print('Game data: $gameData');
+} catch (e) {
+  print('Error getting game data: $e');
+}
+```
+
