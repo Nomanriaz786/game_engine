@@ -181,14 +181,8 @@ router.post('/updateDrawingStatus', async (req, res) => {
 router.get('/incompleteUsers/:game_code/:part_name', async (req, res) => {
     try {
         const { game_code, part_name } = req.params;
-        
-        // Find all drawings for the game and part that are not completed
-        const incompleteDrawings = await Drawing.find({
-            player_part: part_name,
-            is_completed: false
-        });
 
-        // Get the game to find all players
+        // Fetch the game to get all players
         const game = await Game.findOne({ game_code });
         if (!game) {
             return res.status(404).json({ message: 'Game not found' });
@@ -196,18 +190,25 @@ router.get('/incompleteUsers/:game_code/:part_name', async (req, res) => {
 
         // Get all player names
         const allPlayerNames = game.players.map(player => player.player_name);
-        
-        // Get names of players who have completed the part
-        const completedPlayerNames = incompleteDrawings.map(drawing => drawing.player_name);
-        
-        // Find players who haven't completed the part
-        const incompletePlayerNames = allPlayerNames.filter(
+
+        // Find all drawings for this game and part that are completed
+        const completedDrawings = await Drawing.find({
+            game_code,
+            player_part: part_name,
+            is_completed: true
+        }, { player_name: 1 });
+
+        // Player names who completed the drawing
+        const completedPlayerNames = completedDrawings.map(d => d.player_name);
+
+        // Filter players who have NOT completed the drawing
+        const incompletePlayers = allPlayerNames.filter(
             name => !completedPlayerNames.includes(name)
         );
 
-        res.json({ incompletePlayers: incompletePlayerNames });
+        res.json({ incompletePlayers });
     } catch (error) {
-        res.status(404).json({ message: error.message });
+        res.status(500).json({ message: error.message });
     }
 });
 
