@@ -8,6 +8,7 @@ const drawingPointSchema = new mongoose.Schema({
 });
 
 const drawingSchema = new mongoose.Schema({
+    game_code: String,
     created_at: {
         type: Date,
         default: Date.now
