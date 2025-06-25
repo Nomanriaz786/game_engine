@@ -136,9 +136,54 @@ router.post('/storeGameState', async (req, res) => {
 router.post('/updateDrawingStatus', async (req, res) => {
     try {
         const drawingData = req.body;
-        const drawing = new Drawing(drawingData);
-        await drawing.save();
-        res.status(201).json({ message: 'Drawing status updated successfully', drawing });
+        const MAX_POINTS = 50;
+        let pointsToStore = drawingData.drawing_points;
+        let chunk_index = 0;
+        let createdChunks = [];
+
+        // Find the latest chunk for this player/part/game
+        const latestChunk = await Drawing.findOne({
+            player_name: drawingData.player_name,
+            player_part: drawingData.player_part,
+            game_code: drawingData.game_code
+        }).sort({ chunk_index: -1 });
+
+        if (latestChunk && latestChunk.drawing_points.length < MAX_POINTS) {
+            // Fill up the latest chunk if there's space
+            const spaceLeft = MAX_POINTS - latestChunk.drawing_points.length;
+            const pointsForThisChunk = pointsToStore.slice(0, spaceLeft);
+            latestChunk.drawing_points.push(...pointsForThisChunk);
+            await latestChunk.save();
+            createdChunks.push(latestChunk);
+            // Prepare remaining points for new chunks
+            pointsToStore = pointsToStore.slice(spaceLeft);
+            chunk_index = latestChunk.chunk_index + 1;
+        } else if (latestChunk) {
+            chunk_index = latestChunk.chunk_index + 1;
+        }
+
+        // Store remaining points in new chunks
+        while (pointsToStore.length > 0) {
+            const chunkPoints = pointsToStore.slice(0, MAX_POINTS);
+            const newDrawing = new Drawing({
+                ...drawingData,
+                drawing_points: chunkPoints,
+                chunk_index
+            });
+            await newDrawing.save();
+            createdChunks.push(newDrawing);
+            pointsToStore = pointsToStore.slice(MAX_POINTS);
+            chunk_index++;
+        }
+
+        res.status(201).json({ 
+            message: 'Drawing status updated successfully (chunked)',
+            chunks: createdChunks.map(chunk => ({
+                id: chunk._id,
+                chunk_index: chunk.chunk_index,
+                pointsCount: chunk.drawing_points.length
+            }))
+        });
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
@@ -257,19 +302,32 @@ router.get('/incompleteUsers/:game_code/:part_name', async (req, res) => {
 router.get('/getDrawing/:game_code/:player_name/:part_name', async (req, res) => {
     try {
         const { game_code, player_name, part_name } = req.params;
-        const drawing = await Drawing.findOne({
+        // Fetch all drawing chunks for this player/part/game, ordered by chunk_index
+        const drawings = await Drawing.find({
             game_code,
             player_name,
             player_part: part_name
-        });
+        }).sort({ chunk_index: 1 });
 
-        if (!drawing) {
+        if (!drawings || drawings.length === 0) {
             return res.status(404).json({ message: 'Drawing not found' });
         }
 
+        // Combine all drawing points from all chunks
+        const allDrawingPoints = drawings.reduce((acc, doc) => {
+            return acc.concat(doc.drawing_points);
+        }, []);
+
+        // Use the first chunk for meta fields
+        const first = drawings[0];
         res.json({
-            drawing_points: drawing.drawing_points,
-            is_completed: drawing.is_completed
+            drawing_points: allDrawingPoints,
+            is_completed: first.is_completed,
+            player_name: first.player_name,
+            player_part: first.player_part,
+            game_code: first.game_code,
+            chunks: drawings.length,
+            total_points: allDrawingPoints.length
         });
     } catch (error) {
         res.status(404).json({ message: error.message });
