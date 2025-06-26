@@ -365,14 +365,43 @@ router.get('/completedDrawings/:game_code', async (req, res) => {
         
         // Find all completed drawings for the game
         const completedDrawings = await Drawing.find({
+            game_code,
             is_completed: true
-        });
+        }).sort({ player_name: 1, player_part: 1, chunk_index: 1 });
 
         if (!completedDrawings || completedDrawings.length === 0) {
             return res.status(404).json({ message: 'No completed drawings found' });
         }
 
-        res.json(completedDrawings);
+        // Group drawings by player_name and player_part to combine chunks
+        const groupedDrawings = {};
+        
+        completedDrawings.forEach(drawing => {
+            const key = `${drawing.player_name}-${drawing.player_part}`;
+            
+            if (!groupedDrawings[key]) {
+                groupedDrawings[key] = {
+                    created_at: drawing.created_at,
+                    drawed_parts_of_player: drawing.drawed_parts_of_player,
+                    drawing_points: [],
+                    is_completed: drawing.is_completed,
+                    player_drawing: drawing.player_drawing,
+                    player_id: drawing.player_id,
+                    player_image: drawing.player_image,
+                    player_name: drawing.player_name,
+                    player_part: drawing.player_part,
+                    game_code: drawing.game_code
+                };
+            }
+            
+            // Add drawing points from this chunk
+            groupedDrawings[key].drawing_points.push(...drawing.drawing_points);
+        });
+
+        // Convert grouped drawings back to array
+        const uniqueCompletedDrawings = Object.values(groupedDrawings);
+
+        res.json(uniqueCompletedDrawings);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
