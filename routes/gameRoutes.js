@@ -363,24 +363,24 @@ router.get('/completedDrawings/:game_code', async (req, res) => {
     try {
         const { game_code } = req.params;
         
-        // Find all completed drawings for the game
+        // Find all completed drawings for the game without sorting
         const completedDrawings = await Drawing.find({
             game_code,
             is_completed: true
-        }).sort({ player_name: 1, player_part: 1, chunk_index: 1 });
+        }).lean(); // Use lean() for better performance
 
         if (!completedDrawings || completedDrawings.length === 0) {
             return res.status(404).json({ message: 'No completed drawings found' });
         }
 
         // Group drawings by player_name and player_part to combine chunks
-        const groupedDrawings = {};
+        const groupedDrawings = new Map();
         
         completedDrawings.forEach(drawing => {
             const key = `${drawing.player_name}-${drawing.player_part}`;
             
-            if (!groupedDrawings[key]) {
-                groupedDrawings[key] = {
+            if (!groupedDrawings.has(key)) {
+                groupedDrawings.set(key, {
                     created_at: drawing.created_at,
                     drawed_parts_of_player: drawing.drawed_parts_of_player,
                     drawing_points: [],
@@ -391,15 +391,16 @@ router.get('/completedDrawings/:game_code', async (req, res) => {
                     player_name: drawing.player_name,
                     player_part: drawing.player_part,
                     game_code: drawing.game_code
-                };
+                });
             }
             
             // Add drawing points from this chunk
-            groupedDrawings[key].drawing_points.push(...drawing.drawing_points);
+            const group = groupedDrawings.get(key);
+            group.drawing_points.push(...drawing.drawing_points);
         });
 
         // Convert grouped drawings back to array
-        const uniqueCompletedDrawings = Object.values(groupedDrawings);
+        const uniqueCompletedDrawings = Array.from(groupedDrawings.values());
 
         res.json(uniqueCompletedDrawings);
     } catch (error) {
