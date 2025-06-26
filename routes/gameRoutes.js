@@ -248,7 +248,7 @@ router.get('/incompleteUsers/:game_code/:part_name', async (req, res) => {
 
         // Filter players who have NOT completed the drawing
         const incompletePlayers = allPlayerNames.filter(
-            name => !completedPlayerNames.has(name)
+            name => completedPlayerNames.has(name)
         );
 
         res.json({ incompletePlayers });
