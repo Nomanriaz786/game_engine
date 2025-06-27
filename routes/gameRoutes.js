@@ -363,6 +363,12 @@ router.get('/completedDrawings/:game_code', async (req, res) => {
     try {
         const { game_code } = req.params;
         
+        // Delete all incomplete drawings for this game_code
+        await Drawing.deleteMany({
+            game_code,
+            is_completed: false
+        });
+        
         // Find all completed drawings for the game without sorting
         const completedDrawings = await Drawing.find({
             game_code,
