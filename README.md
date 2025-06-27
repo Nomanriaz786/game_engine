@@ -575,3 +575,284 @@ try {
 }
 ```
 
+## WebSocket Events for Real-time Updates
+
+### Connect to WebSocket
+```dart
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+
+IO.Socket socket = IO.io('https://game-engine-alpha.vercel.app', <String, dynamic>{
+  'transports': ['websocket'],
+  'autoConnect': false,
+});
+
+socket.connect();
+```
+
+### Join Game Room
+```dart
+socket.emit('joinGame', gameCode);
+```
+
+### 1. Get Game Data via WebSocket (Replaces HTTP API)
+```dart
+// Request game data
+socket.emit('getGameData', gameCode);
+
+// Listen for game data response
+socket.on('gameData', (data) {
+  if (data['success']) {
+    final gameData = data['game'];
+    print('Game data received: $gameData');
+    // Update your UI with game data
+  } else {
+    print('Error: ${data['message']}');
+  }
+});
+```
+
+### 2. Get Incomplete Users via WebSocket (Replaces HTTP API)
+```dart
+// Request incomplete users for a specific part
+socket.emit('getIncompleteUsers', {
+  'gameCode': '2893',
+  'partName': 'Hat'
+});
+
+// Listen for incomplete users response
+socket.on('incompleteUsers', (data) {
+  if (data['success']) {
+    final incompletePlayers = data['incompletePlayers'];
+    print('Incomplete players: $incompletePlayers');
+    // Update your UI with incomplete players list
+  } else {
+    print('Error: ${data['message']}');
+  }
+});
+```
+
+### 3. Get Drawing Data via WebSocket (Replaces HTTP API)
+```dart
+// Request drawing data for a specific player and part
+socket.emit('getDrawing', {
+  'gameCode': '2893',
+  'playerName': 'John',
+  'partName': 'Hat'
+});
+
+// Listen for drawing data response
+socket.on('drawingData', (data) {
+  if (data['success']) {
+    final drawing = data['drawing'];
+    print('Drawing points: ${drawing['drawing_points'].length}');
+    print('Is completed: ${drawing['is_completed']}');
+    // Use drawing points to render the drawing
+  } else {
+    print('Error: ${data['message']}');
+  }
+});
+```
+
+### Listen for Real-time Updates
+```dart
+// Listen for game data updates from other players
+socket.on('gameDataUpdated', (data) {
+  if (data['success']) {
+    final updatedGameData = data['game'];
+    print('Game updated: $updatedGameData');
+    // Update your UI with new game data
+  }
+});
+
+// Listen for drawing updates from other players
+socket.on('drawingUpdated', (data) {
+  if (data['success']) {
+    print('Drawing updated by ${data['player_name']} for ${data['player_part']}');
+    // Refresh drawing data or update UI
+  }
+});
+```
+
+### Update Game Data
+```dart
+// Update game data and broadcast to all players
+socket.emit('updateGameData', {
+  'gameCode': '2893',
+  'gameData': {
+    'start_game': true,
+    'number_of_players': 3,
+    // ... other game data
+  }
+});
+```
+
+### Update Drawing Status
+```dart
+// Update drawing status and broadcast to all players
+socket.emit('updateDrawingStatus', {
+  'player_name': 'John',
+  'player_part': 'Hat',
+  'game_code': '2893',
+  'drawing_points': [
+    {
+      'offsetDx': 157,
+      'offsetDy': 120,
+      'pointType': 0,
+      'pressure': 1
+    }
+  ],
+  'is_completed': false
+});
+
+// Listen for drawing status update confirmation
+socket.on('drawingStatusUpdated', (data) {
+  if (data['success']) {
+    print('Drawing status updated successfully');
+  } else {
+    print('Error: ${data['message']}');
+  }
+});
+```
+
+### Leave Game Room
+```dart
+socket.leave(gameCode);
+```
+
+### Disconnect
+```dart
+socket.disconnect();
+```
+
+## Complete Flutter WebSocket Manager
+
+```dart
+class GameSocketManager {
+  late IO.Socket socket;
+  String? currentGameCode;
+
+  void connect() {
+    socket = IO.io('https://game-engine-alpha.vercel.app', <String, dynamic>{
+      'transports': ['websocket'],
+      'autoConnect': false,
+    });
+
+    socket.onConnect((_) {
+      print('Connected to WebSocket');
+    });
+
+    socket.onDisconnect((_) {
+      print('Disconnected from WebSocket');
+    });
+
+    socket.onError((error) {
+      print('WebSocket error: $error');
+    });
+
+    socket.connect();
+  }
+
+  void joinGame(String gameCode) {
+    currentGameCode = gameCode;
+    socket.emit('joinGame', gameCode);
+    
+    // Listen for real-time updates
+    socket.on('gameDataUpdated', (data) {
+      if (data['success']) {
+        print('Game updated: ${data['game']}');
+        // Update your game state
+      }
+    });
+
+    socket.on('drawingUpdated', (data) {
+      if (data['success']) {
+        print('Drawing updated by ${data['player_name']}');
+        // Refresh drawing data
+      }
+    });
+  }
+
+  // 1. Get Game Data
+  void getGameData(String gameCode) {
+    socket.emit('getGameData', gameCode);
+    
+    socket.on('gameData', (data) {
+      if (data['success']) {
+        print('Game data: ${data['game']}');
+        // Update your game state
+      } else {
+        print('Error: ${data['message']}');
+      }
+    });
+  }
+
+  // 2. Get Incomplete Users
+  void getIncompleteUsers(String gameCode, String partName) {
+    socket.emit('getIncompleteUsers', {
+      'gameCode': gameCode,
+      'partName': partName
+    });
+    
+    socket.on('incompleteUsers', (data) {
+      if (data['success']) {
+        print('Incomplete players: ${data['incompletePlayers']}');
+        // Update your UI
+      } else {
+        print('Error: ${data['message']}');
+      }
+    });
+  }
+
+  // 3. Get Drawing Data
+  void getDrawing(String gameCode, String playerName, String partName) {
+    socket.emit('getDrawing', {
+      'gameCode': gameCode,
+      'playerName': playerName,
+      'partName': partName
+    });
+    
+    socket.on('drawingData', (data) {
+      if (data['success']) {
+        final drawing = data['drawing'];
+        print('Drawing points: ${drawing['drawing_points'].length}');
+        // Use drawing points
+      } else {
+        print('Error: ${data['message']}');
+      }
+    });
+  }
+
+  void updateGameData(Map<String, dynamic> gameData) {
+    if (currentGameCode != null) {
+      socket.emit('updateGameData', {
+        'gameCode': currentGameCode,
+        'gameData': gameData
+      });
+    }
+  }
+
+  void updateDrawingStatus(Map<String, dynamic> drawingData) {
+    socket.emit('updateDrawingStatus', drawingData);
+    
+    socket.on('drawingStatusUpdated', (data) {
+      if (data['success']) {
+        print('Drawing status updated');
+      } else {
+        print('Error: ${data['message']}');
+      }
+    });
+  }
+
+  void leaveGame() {
+    if (currentGameCode != null) {
+      socket.emit('leaveGame', currentGameCode);
+      currentGameCode = null;
+    }
+  }
+
+  void disconnect() {
+    socket.disconnect();
+  }
+}
+```
+
