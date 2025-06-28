@@ -227,15 +227,11 @@ router.get('/incompleteUsers/:game_code/:part_name', async (req, res) => {
     try {
         const { game_code, part_name } = req.params;
 
-        // Fetch the game to get all players
-        const game = await Game.findOne({ game_code });
-        if (!game) {
-            return res.status(404).json({ message: 'Game not found' });
+        // Fetch the drawings for the game and part
+        const Drawing = await Drawing.findOne({ game_code });
+        if (!Drawing) {
+            return res.status(404).json({ message: 'Drawwing not found' });
         }
-
-        // Get all player names
-        const allPlayerNames = game.players.map(player => player.player_name);
-
         // Find all completed drawings for this game and part
         const incompletedDrawings = await Drawing.find({
             game_code,
