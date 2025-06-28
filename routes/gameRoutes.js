@@ -237,19 +237,13 @@ router.get('/incompleteUsers/:game_code/:part_name', async (req, res) => {
         const allPlayerNames = game.players.map(player => player.player_name);
 
         // Find all completed drawings for this game and part
-        const completedDrawings = await Drawing.find({
+        const incompletedDrawings = await Drawing.find({
             game_code,
             player_part: part_name,
-            is_completed: true
+            is_completed: false
         }, { player_name: 1, player_part: 1 });
 
-        // Use a Set to ensure uniqueness
-        const completedPlayerNames = new Set(completedDrawings.map(d => d.player_name));
-
-        // Filter players who have NOT completed the drawing
-        const incompletePlayers = allPlayerNames.filter(
-            name => completedPlayerNames.has(name)
-        );
+        const incompletePlayers = incompletedDrawings.map(d => d.player_name);
 
         res.json({ incompletePlayers });
     } catch (error) {
