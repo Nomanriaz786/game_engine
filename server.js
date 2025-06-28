@@ -99,36 +99,22 @@ io.on('connection', (socket) => {
     socket.on('getIncompleteUsers', async (data) => {
         try {
             const { gameCode, partName } = data;
-            const Game = require('./models/Game');
             const Drawing = require('./models/Drawing');
 
-            // Fetch the game to get all players
-            const game = await Game.findOne({ game_code: gameCode });
-            if (!game) {
+            // Fetch unique player names for incomplete drawings for the game and part
+            const incompletePlayers = await Drawing.distinct('player_name', { 
+                game_code: gameCode, 
+                player_part: partName, 
+                is_completed: false 
+            });
+
+            if (!incompletePlayers || incompletePlayers.length === 0) {
                 socket.emit('incompleteUsers', {
                     success: false,
-                    message: 'Game not found'
+                    message: 'No incomplete drawings found'
                 });
                 return;
             }
-
-            // Get all player names
-            const allPlayerNames = game.players.map(player => player.player_name);
-
-            // Find all drawings for this game and part that are completed
-            const completedDrawings = await Drawing.find({
-                game_code: gameCode,
-                player_part: partName,
-                is_completed: true
-            }, { player_name: 1 });
-
-            // Use a Set to ensure uniqueness
-            const completedPlayerNames = new Set(completedDrawings.map(d => d.player_name));
-
-            // Filter players who have NOT completed the drawing
-            const incompletePlayers = allPlayerNames.filter(
-                name => completedPlayerNames.has(name)
-            );
 
             socket.emit('incompleteUsers', {
                 success: true,
