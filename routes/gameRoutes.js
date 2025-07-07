@@ -234,11 +234,8 @@ router.get('/incompleteUsers/:game_code/:part_name', async (req, res) => {
             is_completed: false 
         });
 
-        if (!incompletePlayers || incompletePlayers.length === 0) {
-            return res.status(404).json({ message: 'No incomplete drawings found' });
-        }
-
-        res.json({ incompletePlayers });
+        // Return empty array if no incomplete drawings found
+        res.json({ incompletePlayers: incompletePlayers || [] });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

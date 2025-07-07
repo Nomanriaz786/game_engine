@@ -108,17 +108,10 @@ io.on('connection', (socket) => {
                 is_completed: false 
             });
 
-            if (!incompletePlayers || incompletePlayers.length === 0) {
-                socket.emit('incompleteUsers', {
-                    success: false,
-                    message: 'No incomplete drawings found'
-                });
-                return;
-            }
-
+            // Return empty array if no incomplete drawings found (no error)
             socket.emit('incompleteUsers', {
                 success: true,
-                incompletePlayers: incompletePlayers
+                incompletePlayers: incompletePlayers || []
             });
         } catch (error) {
             socket.emit('incompleteUsers', {
