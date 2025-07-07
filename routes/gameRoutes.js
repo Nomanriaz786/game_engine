@@ -136,7 +136,7 @@ router.post('/storeGameState', async (req, res) => {
 router.post('/updateDrawingStatus', async (req, res) => {
     try {
         const drawingData = req.body;
-        const MAX_POINTS = 50;
+        const MAX_POINTS = 500;
         let pointsToStore = drawingData.drawing_points;
         let chunk_index = 0;
         let createdChunks = [];
