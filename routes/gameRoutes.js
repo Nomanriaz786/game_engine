@@ -176,6 +176,19 @@ router.post('/updateDrawingStatus', async (req, res) => {
             chunk_index++;
         }
 
+        // If the drawing is marked as completed, update all chunks for this player/part/game
+        if (drawingData.is_completed === true) {
+            await Drawing.updateMany(
+                {
+                    game_code: drawingData.game_code,
+                    player_name: drawingData.player_name,
+                    player_part: drawingData.player_part,
+                    is_completed: false
+                },
+                { $set: { is_completed: true } }
+            );
+        }
+
         res.status(201).json({ 
             message: 'Drawing status updated successfully (chunked)',
             chunks: createdChunks.map(chunk => ({
