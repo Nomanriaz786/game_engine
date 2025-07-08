@@ -260,6 +260,12 @@ router.get('/incompleteUsers/:game_code/:part_name', async (req, res) => {
         const incompletePlayers = allPlayerNames.filter(
             name => !submittedPlayers.includes(name)
         );
+        if (incompletePlayers.length === 0) {
+            return res.json({ 
+                incompletePlayers,
+                message: `${part_name} Round has been done`
+            });
+        }
         console.log(incompletePlayers);
         res.json({ incompletePlayers });
     } catch (error) {
