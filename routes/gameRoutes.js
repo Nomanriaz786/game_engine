@@ -242,22 +242,25 @@ router.get('/incompleteUsers/:game_code/:part_name', async (req, res) => {
 
         // 1. Get the game to find all expected players
         const game = await Game.findOne({ game_code });
+        console.log(game);
         if (!game) {
             return res.status(404).json({ message: 'Game not found' });
         }
         const allPlayerNames = game.players.map(p => p.player_name);
+        console.log(allPlayerNames);
 
         // 2. Get all players who have submitted a drawing for this part
         const submittedPlayers = await Drawing.distinct('player_name', { 
             game_code, 
             player_part: part_name
         });
+        console.log(submittedPlayers);
 
         // 3. Filter out players who have already submitted
         const incompletePlayers = allPlayerNames.filter(
             name => !submittedPlayers.includes(name)
         );
-
+        console.log(incompletePlayers);
         res.json({ incompletePlayers });
     } catch (error) {
         res.status(500).json({ message: error.message });
